@@ -1,13 +1,16 @@
 package engine
 
 import (
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"go-Snake/controls"
+	"go-Snake/logger"
+	"image/color"
 	"math/rand"
 	"strconv"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 const (
@@ -16,35 +19,41 @@ const (
 )
 
 func NewGame(width, height int) *Game {
-	rand.Seed(time.Now().UnixNano())
+	src := rand.NewSource(time.Now().UnixNano())
+	rng := rand.New(src)
 
 	snake := &Snake{
 		Dir:  DirectionRight,
 		Body: make([][2]int, 0),
 	}
 
-	// Initial position
 	startX := width / 2 / GridSize * GridSize
 	startY := height / 2 / GridSize * GridSize
 	for i := 0; i < 3; i++ {
 		snake.Body = append(snake.Body, [2]int{startX - i*GridSize, startY})
 	}
 
-	return &Game{
+	game := &Game{
 		ScreenWidth:  width,
 		ScreenHeight: height,
 		Snake:        snake,
-		Food:         generateFood(width, height),
 		GameOver:     false,
 		MoveDelay:    MoveSpeed,
 		LastMove:     time.Now(),
+		RNG:          rng,
 	}
+
+	game.Food = game.generateFood()
+	return game
 }
 
-func generateFood(width, height int) *Food {
+func (g *Game) generateFood() *Food {
+	maxX := (g.ScreenWidth / GridSize) - 1
+	maxY := (g.ScreenHeight / GridSize) - 1
+
 	return &Food{
-		X: (rand.Intn(width/GridSize-2) + 1) * GridSize,
-		Y: (rand.Intn(height/GridSize-2) + 1) * GridSize,
+		X: g.RNG.Intn(maxX) * GridSize,
+		Y: g.RNG.Intn(maxY) * GridSize,
 	}
 }
 
@@ -52,6 +61,7 @@ func (g *Game) Update() error {
 	if g.GameOver {
 		if controls.HandleInput() == "RESTART" {
 			*g = *NewGame(g.ScreenWidth, g.ScreenHeight)
+			logger.Log.Info().Msg("Game restarted")
 		}
 		return nil
 	}
@@ -75,18 +85,22 @@ func (g *Game) updateDirection(newDir string) {
 	case "UP":
 		if g.Snake.Dir != DirectionDown {
 			g.Snake.Dir = DirectionUp
+			logger.Log.Debug().Str("direction", "UP").Msg("Direction changed")
 		}
 	case "DOWN":
 		if g.Snake.Dir != DirectionUp {
 			g.Snake.Dir = DirectionDown
+			logger.Log.Debug().Str("direction", "DOWN").Msg("Direction changed")
 		}
 	case "LEFT":
 		if g.Snake.Dir != DirectionRight {
 			g.Snake.Dir = DirectionLeft
+			logger.Log.Debug().Str("direction", "LEFT").Msg("Direction changed")
 		}
 	case "RIGHT":
 		if g.Snake.Dir != DirectionLeft {
 			g.Snake.Dir = DirectionRight
+			logger.Log.Debug().Str("direction", "RIGHT").Msg("Direction changed")
 		}
 	}
 }
@@ -113,17 +127,17 @@ func (g *Game) moveSnake() {
 func (g *Game) checkCollisions() {
 	head := g.Snake.Body[0]
 
-	// Wall collision
 	if head[0] < 0 || head[0] >= g.ScreenWidth ||
 		head[1] < 0 || head[1] >= g.ScreenHeight {
 		g.GameOver = true
+		logger.Log.Warn().Interface("position", head).Msg("Wall collision")
 		return
 	}
 
-	// Self collision
 	for _, segment := range g.Snake.Body[1:] {
 		if head[0] == segment[0] && head[1] == segment[1] {
 			g.GameOver = true
+			logger.Log.Warn().Interface("position", head).Msg("Self collision")
 			return
 		}
 	}
@@ -132,34 +146,36 @@ func (g *Game) checkCollisions() {
 func (g *Game) checkFood() {
 	head := g.Snake.Body[0]
 	if head[0] == g.Food.X && head[1] == g.Food.Y {
-		// Grow snake
 		g.Snake.Body = append(g.Snake.Body, g.Snake.Body[len(g.Snake.Body)-1])
-		g.Food = generateFood(g.ScreenWidth, g.ScreenHeight)
+		g.Food = g.generateFood()
 		g.Score++
+		logger.Log.Info().Int("score", g.Score).Msg("Food eaten")
 	}
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	// Draw snake
 	for _, segment := range g.Snake.Body {
-		ebitenutil.DrawRect(
+		vector.DrawFilledRect(
 			screen,
-			float64(segment[0]),
-			float64(segment[1]),
+			float32(segment[0]),
+			float32(segment[1]),
 			GridSize-1,
 			GridSize-1,
-			SnakeColor,
+			color.RGBA{R: 50, G: 205, B: 50, A: 255},
+			false,
 		)
 	}
 
 	// Draw food
-	ebitenutil.DrawRect(
+	vector.DrawFilledRect(
 		screen,
-		float64(g.Food.X),
-		float64(g.Food.Y),
+		float32(g.Food.X),
+		float32(g.Food.Y),
 		GridSize-1,
 		GridSize-1,
-		FoodColor,
+		color.RGBA{R: 220, G: 20, B: 60, A: 255},
+		false,
 	)
 
 	// Draw UI
@@ -178,6 +194,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 }
 
-func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+func (g *Game) Layout(_, _ int) (int, int) {
 	return g.ScreenWidth, g.ScreenHeight
 }

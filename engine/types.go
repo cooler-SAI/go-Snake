@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"image/color"
+	"math/rand"
 	"time"
 )
 
@@ -33,9 +33,5 @@ type Game struct {
 	Score        int
 	LastMove     time.Time
 	MoveDelay    time.Duration
+	RNG          *rand.Rand
 }
-
-var (
-	SnakeColor = color.RGBA{0, 255, 0, 255}
-	FoodColor  = color.RGBA{255, 0, 0, 255}
-)

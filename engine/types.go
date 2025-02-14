@@ -1,5 +1,10 @@
 package engine
 
+import (
+	"image/color"
+	"time"
+)
+
 type Direction int
 
 const (
@@ -10,14 +15,13 @@ const (
 )
 
 type Snake struct {
-	X, Y  int       // Текущая позиция головы
-	Body  [][2]int  // Сегменты тела
-	Dir   Direction // Направление
-	Speed int       // Скорость (пикселей в кадр)
+	Body  [][2]int
+	Dir   Direction
+	Speed int
 }
 
 type Food struct {
-	X, Y int // Позиция еды
+	X, Y int
 }
 
 type Game struct {
@@ -26,4 +30,12 @@ type Game struct {
 	Snake        *Snake
 	Food         *Food
 	GameOver     bool
+	Score        int
+	LastMove     time.Time
+	MoveDelay    time.Duration
 }
+
+var (
+	SnakeColor = color.RGBA{0, 255, 0, 255}
+	FoodColor  = color.RGBA{255, 0, 0, 255}
+)

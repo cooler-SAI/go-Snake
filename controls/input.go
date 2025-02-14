@@ -2,24 +2,20 @@ package controls
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/rs/zerolog/log"
 )
 
 func HandleInput() string {
 	switch {
-	case ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyUp):
-		log.Info().Msg("Moving UP")
+	case ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyW):
 		return "UP"
-	case ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyDown):
-		log.Info().Msg("Moving DOWN")
+	case ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS):
 		return "DOWN"
-	case ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyLeft):
-		log.Info().Msg("Moving LEFT")
+	case ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA):
 		return "LEFT"
-	case ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyRight):
-		log.Info().Msg("Moving RIGHT")
+	case ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD):
 		return "RIGHT"
-	default:
-		return ""
+	case ebiten.IsKeyPressed(ebiten.KeyR):
+		return "RESTART"
 	}
+	return ""
 }
